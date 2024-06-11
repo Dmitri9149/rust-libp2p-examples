@@ -2,12 +2,12 @@ use once_cell::sync::Lazy;
 use libp2p::{
   core::upgrade,
   identity, 
-  Transport, 
+//  Transport, 
   PeerId, 
   floodsub::{Floodsub, FloodsubEvent, Topic},
   swarm::{Swarm, NetworkBehaviour},
   mdns::tokio::Behaviour,
-  tcp,
+  tcp::tokio::Transport,
   noise
 };
 use tokio::{sync::mpsc};
@@ -103,6 +103,30 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let (response_sender, mut response_rcv) = 
       mpsc::unbounded_channel::<mpsc::UnboundedSender<ListResponse>>(); 
     let auth_keys = noise::Config::new(&KEYS).unwrap();
+
+    let transp = Transport::new(libp2p::tcp::Config::default().nodelay(true));
+//        .upgrade(upgrade::Version::V1)
+//        .authenticate(noise::Config::xx(auth_keys).into_authenticated()) // XX Handshake pattern, IX exists as well and IK - only XX currently provides interop with other libp2p impls
+//        .multiplex(mplex::MplexConfig::new())
+//        .boxed();
+
+    let mut swarm = libp2p::SwarmBuilder::with_new_identity()
+        .with_tokio()
+        .with_tcp(
+            libp2p::tcp::Config::default(),
+            noise::Config::new,
+            libp2p::yamux::Config::default,
+        )?
+        .with_behaviour(|key: &identity::Keypair| {
+
+            let mdns = libp2p::mdns::tokio::Behaviour::new(
+              libp2p::mdns::Config::default(), 
+              key.public().to_peer_id())?;
+            
+            Ok(RecipeBehaviour {floodsub, mdns})
+          
+        })?
+        .build();
 
   Ok(())
 }
