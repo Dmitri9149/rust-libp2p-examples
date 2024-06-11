@@ -14,6 +14,7 @@ use tokio::{sync::mpsc};
 use serde::Serialize;
 use serde::Deserialize;
 use log::{error, info};
+use tracing_subscriber::EnvFilter;
 // use libp2p_core::{Transport, upgrade, transport::MemoryTransport};
 
 use std::error::Error;
@@ -90,5 +91,9 @@ impl From<libp2p::mdns::Event> for RecipeBehaviourEvent {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+  let _ = tracing_subscriber::fmt()
+    .with_env_filter(EnvFilter::from_default_env())
+    .try_init();
+
   Ok(())
 }
