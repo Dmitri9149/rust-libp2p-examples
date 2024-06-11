@@ -1,25 +1,22 @@
 use once_cell::sync::Lazy;
 use libp2p::{
   core::upgrade,
-//  identity, 
+  identity, 
   Transport, 
   PeerId, 
   floodsub::{Floodsub, FloodsubEvent, Topic},
-  swarm::{NetworkBehaviour},
+  swarm::{Swarm, NetworkBehaviour},
   mdns::tokio::Behaviour,
   tcp,
 //  noise::{Keypair, X25519Spec, NoiseConfig}
 };
-use libp2p_mplex;
 use tokio::{sync::mpsc};
 use serde::Serialize;
 use serde::Deserialize;
 use log::{error, info};
-use libp2p_noise as noise;
-use libp2p_identity as identity;
 // use libp2p_core::{Transport, upgrade, transport::MemoryTransport};
 
-use std::fmt::Error;
+use std::error::Error;
 
 
 const STORAGE_FILE_PATH: &str = "./recipes.json";
@@ -61,17 +58,37 @@ struct ListResponse {
 
 enum EventType {
   Response(ListResponse),
-  Input(String)
+  Input(String),
+  Floodsub(FloodsubEvent),
+  Mdns(libp2p::mdns::Event)
 }
 
 #[derive(NetworkBehaviour)]
+#[behaviour(out_event = "RecipeBehaviourEvent")]
 struct RecipeBehaviour {
     floodsub: Floodsub,
-    mdns: Behaviour,
-//    #[behaviour(ignore)]
-//    response_sender: mpsc::UnboundedSender<ListResponse>,
+    mdns: libp2p::mdns::tokio::Behaviour,
 }
-const STORAGE_FILE_PATH: &str = "./recipes.json";
-static KEYS: Lazy<identity::Keypair> = Lazy::new(|| identity::Keypair::generate_ed25519());
-static PEER_ID: Lazy<PeerId> = Lazy::new(|| PeerId::from(KEYS.public()));
-static TOPIC: Lazy<Topic> = Lazy::new(|| Topic::new("recipes"));
+
+#[derive(Debug)]
+enum RecipeBehaviourEvent {
+  Floodsub(FloodsubEvent),
+  Mdns(libp2p::mdns::Event),
+}
+
+impl From<FloodsubEvent> for RecipeBehaviourEvent {
+  fn from(event: FloodsubEvent) -> Self {
+      RecipeBehaviourEvent::Floodsub(event)
+  }
+}
+
+impl From<libp2p::mdns::Event> for RecipeBehaviourEvent {
+  fn from(event: libp2p::mdns::Event) -> Self {
+      RecipeBehaviourEvent::Mdns(event)
+  }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+  Ok(())
+}

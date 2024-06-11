@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-libp2p = { version = "0.52", features = ["tokio", "noise", "mdns", "floodsub", "tcp", "tls", "dns", "async-std", "noise", "yamux", "websocket", "ping", "macros"] }
+libp2p = { version = "0.53.2", features = ["tokio", "noise", "mdns", "floodsub", "tcp", "tls", "dns", "async-std", "noise", "yamux", "websocket", "ping", "macros"] }
 futures = "0.3.21"
 async-std = { version = "1.12.0", features = ["attributes"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
