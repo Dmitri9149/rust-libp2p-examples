@@ -5,7 +5,7 @@ use libp2p::{
 //  Transport, 
   PeerId, 
   floodsub::{Floodsub, FloodsubEvent, Topic},
-  swarm::{Swarm, NetworkBehaviour},
+  swarm::{Swarm, NetworkBehaviour, SwarmEvent},
   mdns::tokio::Behaviour,
   tcp::tokio::Transport,
   noise
@@ -15,6 +15,7 @@ use serde::Serialize;
 use serde::Deserialize;
 use log::{error, info};
 use tracing_subscriber::EnvFilter;
+use libp2p::futures::StreamExt;
 // use libp2p_core::{Transport, upgrade, transport::MemoryTransport};
 
 use std::error::Error;
@@ -60,8 +61,8 @@ struct ListResponse {
 enum EventType {
   Response(ListResponse),
   Input(String),
-  Floodsub(FloodsubEvent),
-  Mdns(libp2p::mdns::Event)
+  FloodsubEvent(FloodsubEvent),
+  MdnsEvent(libp2p::mdns::Event),
 }
 
 #[derive(NetworkBehaviour)]
@@ -101,7 +102,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Peer Id: {}", PEER_ID.clone());
    
     let (response_sender, mut response_rcv) = 
-      mpsc::unbounded_channel::<mpsc::UnboundedSender<ListResponse>>(); 
+//      mpsc::unbounded_channel::<mpsc::UnboundedSender<ListResponse>>(); 
+      mpsc::unbounded_channel();
+
     let auth_keys = noise::Config::new(&KEYS).unwrap();
 
     let transp = Transport::new(libp2p::tcp::Config::default().nodelay(true));
@@ -143,5 +146,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
 
-  Ok(())
+    loop {
+      let evt = {
+          tokio::select! {
+              line = stdin.next_line() => Some(EventType::Input(line.expect("can get line").expect("can read line from stdin"))),
+              response = response_rcv.recv() => Some(EventType::Response(response.expect("response exists"))),
+              event = swarm.select_next_some() => {
+                  match event {
+                      SwarmEvent::Behaviour(RecipeBehaviourEvent::Floodsub(event)) => Some(EventType::FloodsubEvent(event)),
+                      SwarmEvent::Behaviour(RecipeBehaviourEvent::Mdns(event)) => Some(EventType::MdnsEvent(event)),
+                      _ => {
+                          info!("Unhandled Swarm Event: {:?}", event);
+                          None
+                      }
+                  }
+              },
+          }
+      };
+    }
+
+//  Ok(())
 }
