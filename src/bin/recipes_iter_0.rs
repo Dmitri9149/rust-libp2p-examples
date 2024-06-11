@@ -12,7 +12,7 @@ use libp2p::{
 };
 use tokio::{sync::mpsc, io::AsyncBufReadExt};
 use serde::Serialize;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use log::{error, info};
 use tracing_subscriber::EnvFilter;
 use libp2p::futures::StreamExt;
@@ -163,7 +163,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
               },
           }
       };
+
+      if let Some(event) = evt {
+        match event {
+            EventType::Response(resp) => {
+                let json = serde_json::to_string(&resp).expect("can jsonify response");
+                swarm
+                    .behaviour_mut()
+                    .floodsub
+                    .publish(TOPIC.clone(), json.as_bytes());
+            }
+            _ => {}
+        }
+
     }
 
 //  Ok(())
+  }
 }
