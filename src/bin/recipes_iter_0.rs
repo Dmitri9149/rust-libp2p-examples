@@ -8,7 +8,7 @@ use libp2p::{
   swarm::{Swarm, NetworkBehaviour},
   mdns::tokio::Behaviour,
   tcp,
-//  noise::{Keypair, X25519Spec, NoiseConfig}
+  noise
 };
 use tokio::{sync::mpsc};
 use serde::Serialize;
@@ -94,6 +94,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
   let _ = tracing_subscriber::fmt()
     .with_env_filter(EnvFilter::from_default_env())
     .try_init();
+
+//    pretty_env_logger::init();
+
+    info!("Peer Id: {}", PEER_ID.clone());
+    println!("Peer Id: {}", PEER_ID.clone());
+   
+    let (response_sender, mut response_rcv) = 
+      mpsc::unbounded_channel::<mpsc::UnboundedSender<ListResponse>>(); 
+    let auth_keys = noise::Config::new(&KEYS).unwrap();
 
   Ok(())
 }
