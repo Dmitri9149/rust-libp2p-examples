@@ -10,7 +10,7 @@ use libp2p::{
   tcp::tokio::Transport,
   noise
 };
-use tokio::{sync::mpsc};
+use tokio::{sync::mpsc, io::AsyncBufReadExt};
 use serde::Serialize;
 use serde::Deserialize;
 use log::{error, info};
@@ -128,6 +128,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
           
         })?
         .build();
+
+    let mut stdin = tokio::io::BufReader::new(tokio::io::stdin()).lines();
+
+/* 
+        Swarm::listen_on(
+          &mut swarm,
+          "/ip4/0.0.0.0/tcp/0"
+              .parse()
+              .expect("can get a local socket"),
+      )
+      .expect("swarm can be started");
+*/
+
+    swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
 
   Ok(())
 }
