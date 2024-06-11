@@ -118,6 +118,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             libp2p::yamux::Config::default,
         )?
         .with_behaviour(|key: &identity::Keypair| {
+          let floodsub = Floodsub::new(PEER_ID.clone());
 
             let mdns = libp2p::mdns::tokio::Behaviour::new(
               libp2p::mdns::Config::default(), 
