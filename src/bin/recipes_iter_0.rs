@@ -113,7 +113,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut swarm = libp2p::SwarmBuilder::with_new_identity()
         .with_tokio()
         .with_tcp(
-            libp2p::tcp::Config::default(),
+            libp2p::tcp::Config::default().nodelay(true),
             noise::Config::new,
             libp2p::yamux::Config::default,
         )?
