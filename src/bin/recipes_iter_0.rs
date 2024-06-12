@@ -18,6 +18,7 @@ use libp2p::futures::StreamExt;
 // use libp2p_core::{Transport, upgrade, transport::MemoryTransport};
 
 use std::error::Error;
+use std::collections::HashSet;
 
 
 const STORAGE_FILE_PATH: &str = "./recipes.json";
@@ -178,9 +179,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
             EventType::Input(line) => match line.as_str() {
              "ls p" => handle_list_peers(&mut swarm).await,
-              cmd if cmd.starts_with("ls_r") => handle_list_recipes(cmd, &mut swarm).await,
-              cmd if cmd.starts_with("create r") => handle_create_recipe(cmd).await,
-              cmd if cmd.starts_with("publish r") => handle_publish_recipe(cmd).await,
+//              cmd if cmd.starts_with("ls_r") => handle_list_recipes(cmd, &mut swarm).await,
+//              cmd if cmd.starts_with("create r") => handle_create_recipe(cmd).await,
+//              cmd if cmd.starts_with("publish r") => handle_publish_recipe(cmd).await,
               _ => error!("unknown command"),
             }
             _ => {}
@@ -190,4 +191,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 //  Ok(())
   }
+}
+
+async fn handle_list_peers(swarm: &mut Swarm<RecipeBehaviour>) {
+  info!("Discovered Peers: ");
+  let nodes = swarm.behaviour().mdns.discovered_nodes();
+  let mut unique_peers = HashSet::new();
+  for peer in nodes {
+    unique_peers.insert(peer);
+  }
+  unique_peers.iter().for_each(|p| info!("{}",p));
 }
