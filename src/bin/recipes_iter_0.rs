@@ -6,13 +6,13 @@ use libp2p::{
     noise,
     swarm::{NetworkBehaviour, Swarm, SwarmEvent},
     tcp::tokio::Transport,
-    //  Transport,
     PeerId,
 };
+use tokio::{fs, io::AsyncBufReadExt, sync::mpsc};
+
 use log::{error, info};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use tokio::{fs, io::AsyncBufReadExt, sync::mpsc};
 use tracing_subscriber::EnvFilter;
 
 use std::collections::HashSet;
