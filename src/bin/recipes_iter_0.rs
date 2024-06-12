@@ -230,6 +230,29 @@ async fn main() -> Result<(), Box<dyn Error>> {
               cmd if cmd.starts_with("publish r") => handle_publish_recipe(cmd).await,
               _ => error!("unknown command"),
             }
+            EventType::MdnsEvent(mdns_event) => match mdns_event {
+              libp2p::mdns::Event::Discovered(discovered_list) => {
+                for (peer, _addr) in discovered_list {
+                  info!("Disocvered a peer:{} at {}", peer, _addr);
+                  swarm
+                    .behaviour_mut()
+                    .floodsub
+                    .add_node_to_partial_view(peer);
+                } 
+              },
+              libp2p::mdns::Event::Expired(expired_list) => {
+                for (peer, _addr) in expired_list {
+                  info!("Expired a peer:{} at {}", peer, _addr);
+                  if !swarm.behaviour_mut().mdns.discovered_nodes().any(|p| *p == peer) {
+                    swarm
+                    .behaviour_mut()
+                    .floodsub
+                    .remove_node_from_partial_view(&peer);
+                  }
+                } 
+              },
+
+            }          
             _ => {}
         }
 
