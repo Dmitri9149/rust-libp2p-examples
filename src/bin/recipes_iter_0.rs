@@ -185,7 +185,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
             EventType::Input(line) => match line.as_str() {
              "ls p" => handle_list_peers(&mut swarm).await,
-//              cmd if cmd.starts_with("ls_r") => handle_list_recipes(cmd, &mut swarm).await,
+              cmd if cmd.starts_with("ls_r") => handle_list_recipes(cmd, &mut swarm).await,
 //              cmd if cmd.starts_with("create r") => handle_create_recipe(cmd).await,
 //              cmd if cmd.starts_with("publish r") => handle_publish_recipe(cmd).await,
               _ => error!("unknown command"),
@@ -209,7 +209,7 @@ async fn handle_list_peers(swarm: &mut Swarm<RecipeBehaviour>) {
   unique_peers.iter().for_each(|p| info!("{}",p));
 }
 
-async fn handle_create_recipe(cmd: &str, swarm: &mut Swarm<RecipeBehaviour>) {
+async fn handle_list_recipes(cmd: &str, swarm: &mut Swarm<RecipeBehaviour>) {
   let rest = cmd.strip_prefix("ls r");
 
   let from_json_to_publishing = |req: ListRequest| {
