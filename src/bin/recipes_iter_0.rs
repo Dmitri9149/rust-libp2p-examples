@@ -10,7 +10,7 @@ use libp2p::{
   tcp::tokio::Transport,
   noise
 };
-use tokio::{sync::mpsc, io::AsyncBufReadExt};
+use tokio::{sync::mpsc, io::AsyncBufReadExt, fs};
 use serde::{Deserialize, Serialize};
 use log::{error, info};
 use tracing_subscriber::EnvFilter;
@@ -88,6 +88,12 @@ impl From<libp2p::mdns::Event> for RecipeBehaviourEvent {
   fn from(event: libp2p::mdns::Event) -> Self {
       RecipeBehaviourEvent::Mdns(event)
   }
+}
+
+async fn read_local_recipes() -> Result <Recipes, Box<dyn Error>> {
+  let content = fs::read(STORAGE_FILE_PATH).await?;
+  let result = serde_json::from_slice(&content)?;
+  Ok(result)
 }
 
 #[tokio::main]
@@ -179,9 +185,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
             EventType::Input(line) => match line.as_str() {
              "ls p" => handle_list_peers(&mut swarm).await,
-              cmd if cmd.starts_with("ls_r") => handle_list_recipes(cmd, &mut swarm).await,
-              cmd if cmd.starts_with("create r") => handle_create_recipe(cmd).await,
-              cmd if cmd.starts_with("publish r") => handle_publish_recipe(cmd).await,
+//              cmd if cmd.starts_with("ls_r") => handle_list_recipes(cmd, &mut swarm).await,
+//              cmd if cmd.starts_with("create r") => handle_create_recipe(cmd).await,
+//              cmd if cmd.starts_with("publish r") => handle_publish_recipe(cmd).await,
               _ => error!("unknown command"),
             }
             _ => {}
@@ -206,7 +212,7 @@ async fn handle_list_peers(swarm: &mut Swarm<RecipeBehaviour>) {
 async fn handle_create_recipe(cmd: &str, swarm: &mut Swarm<RecipeBehaviour>) {
   let rest = cmd.strip_prefix("ls r");
 
-  let json_to_publish = |req: ListRequest| {
+  let from_json_to_publishing = |req: ListRequest| {
     let json = serde_json::to_string(&req).expect("can jsonify request");
     swarm
       .behaviour_mut()
@@ -245,3 +251,4 @@ async fn handle_create_recipe(cmd: &str, swarm: &mut Swarm<RecipeBehaviour>) {
     }
   }
 }
+
