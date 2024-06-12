@@ -1,6 +1,5 @@
 use libp2p::futures::StreamExt;
 use libp2p::{
-    core::upgrade,
     floodsub::{Floodsub, FloodsubEvent, Topic},
     identity,
     mdns::tokio::Behaviour,
@@ -15,7 +14,6 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use tokio::{fs, io::AsyncBufReadExt, sync::mpsc};
 use tracing_subscriber::EnvFilter;
-// use libp2p_core::{Transport, upgrade, transport::MemoryTransport};
 
 use std::collections::HashSet;
 use std::error::Error;
@@ -317,7 +315,7 @@ async fn handle_list_peers(swarm: &mut Swarm<RecipeBehaviour>) {
 async fn handle_list_recipes(cmd: &str, swarm: &mut Swarm<RecipeBehaviour>) {
     let rest = cmd.strip_prefix("ls r");
 
-    let from_json_to_publishing = |req: ListRequest| {
+    let publish = |req: ListRequest| {
         let json = serde_json::to_string(&req).expect("can jsonify request");
         swarm
             .behaviour_mut()
