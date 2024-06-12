@@ -153,6 +153,7 @@ async fn publish_recipe(id: usize) -> Result<(), Box<dyn Error>> {
     write_local_recipes(&local_recipes).await?;
     Ok(())
 }
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let _ = tracing_subscriber::fmt()
