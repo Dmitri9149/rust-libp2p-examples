@@ -202,3 +202,46 @@ async fn handle_list_peers(swarm: &mut Swarm<RecipeBehaviour>) {
   }
   unique_peers.iter().for_each(|p| info!("{}",p));
 }
+
+async fn handle_create_recipe(cmd: &str, swarm: &mut Swarm<RecipeBehaviour>) {
+  let rest = cmd.strip_prefix("ls r");
+
+  let json_to_publish = |req: ListRequest| {
+    let json = serde_json::to_string(&req).expect("can jsonify request");
+    swarm
+      .behaviour_mut()
+      .floodsub
+      .publish(TOPIC.clone(), json.as_bytes().to_vec()); 
+  }; 
+  match rest {
+    Some("all") => {
+      let req = ListRequest {
+        mode: ListMode::ALL
+      };
+      let json = serde_json::to_string(&req).expect("can jsonify request");
+      swarm
+        .behaviour_mut()
+        .floodsub
+        .publish(TOPIC.clone(), json.as_bytes().to_vec());
+    }
+    Some(recipe_peer_id) => {
+      let req = ListRequest {
+        mode: ListMode::One(recipe_peer_id.to_owned())
+      };
+      let json = serde_json::to_string(&req).expect("can jsonify request");
+      swarm
+        .behaviour_mut()
+        .floodsub
+        .publish(TOPIC.clone(), json.as_bytes().to_vec());
+    }
+    None => {
+      match read_local_recipes().await {
+        Ok(v) => {
+          info!("Local Recipes ({})", v.len());
+          v.iter().for_each(|r| info!("{:?}", r));
+        }
+        Err(e) => error!("error fetching local recipes: {}", e),
+      }
+    }
+  }
+}
