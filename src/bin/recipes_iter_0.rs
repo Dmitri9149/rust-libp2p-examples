@@ -124,6 +124,18 @@ async fn write_local_recipes(recipes: &Recipes) -> Result<(), Box<dyn Error>> {
   fs::write(STORAGE_FILE_PATH, &json).await?;
   Ok(())
 }
+
+async fn publish_recipe(id: usize) -> Result<(), Box<dyn Error>> {
+  let mut local_recipes = read_local_recipes().await?;
+  local_recipes
+    .iter_mut()
+    .filter(|r| r.id == id)
+    .for_each(|r| r.public = true);
+  write_local_recipes(&local_recipes).await?;
+  Ok(())
+
+  
+}
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
   let _ = tracing_subscriber::fmt()
@@ -215,7 +227,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
              "ls p" => handle_list_peers(&mut swarm).await,
               cmd if cmd.starts_with("ls_r") => handle_list_recipes(cmd, &mut swarm).await,
               cmd if cmd.starts_with("create r") => handle_create_recipes(cmd).await,
-//              cmd if cmd.starts_with("publish r") => handle_publish_recipe(cmd).await,
+              cmd if cmd.starts_with("publish r") => handle_publish_recipe(cmd).await,
               _ => error!("unknown command"),
             }
             _ => {}
@@ -293,5 +305,20 @@ async fn handle_create_recipes(cmd: &str) {
         error!("error creating story: {}", e);
       };
     }
+  }
+}
+
+async fn handle_publish_recipe(cmd: &str) {
+  if let Some(rest) = cmd.strip_prefix("publish r") {
+    match rest.trim().parse::<usize>() {
+      Ok(id) => {
+        if let Err(e) = publish_recipe(id).await {
+          info!("error publishing story with id {}, {}", id, e)
+        } else {
+          info!("Published story with id: {}", id);
+        } 
+      },
+      Err(e) => error!("invalid id: {}, {}", rest.trim(), e),
+    } 
   }
 }
