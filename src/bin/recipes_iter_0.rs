@@ -293,9 +293,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             }
                         }
                     }
-                    _ => {
-                        info!("Subscription events");
-                    } //            _ => {}
+                    _ => info!("Subscription events"), 
                 },
             }
         }
@@ -315,7 +313,7 @@ async fn handle_list_peers(swarm: &mut Swarm<RecipeBehaviour>) {
 async fn handle_list_recipes(cmd: &str, swarm: &mut Swarm<RecipeBehaviour>) {
     let rest = cmd.strip_prefix("ls r");
 
-    let publish = |req: ListRequest| {
+    let mut publish = |req: ListRequest| {
         let json = serde_json::to_string(&req).expect("can jsonify request");
         swarm
             .behaviour_mut()
@@ -327,21 +325,27 @@ async fn handle_list_recipes(cmd: &str, swarm: &mut Swarm<RecipeBehaviour>) {
             let req = ListRequest {
                 mode: ListMode::ALL,
             };
+            publish(req);
+/* 
             let json = serde_json::to_string(&req).expect("can jsonify request");
             swarm
                 .behaviour_mut()
                 .floodsub
                 .publish(TOPIC.clone(), json.as_bytes().to_vec());
+*/
         }
         Some(recipe_peer_id) => {
             let req = ListRequest {
                 mode: ListMode::One(recipe_peer_id.to_owned()),
             };
+            publish(req);
+/* 
             let json = serde_json::to_string(&req).expect("can jsonify request");
             swarm
                 .behaviour_mut()
                 .floodsub
                 .publish(TOPIC.clone(), json.as_bytes().to_vec());
+*/
         }
         None => match read_local_recipes().await {
             Ok(v) => {
