@@ -11,7 +11,6 @@ use libp2p::{
   noise
 };
 use tokio::{sync::mpsc, io::AsyncBufReadExt};
-use serde::Serialize;
 use serde::{Deserialize, Serialize};
 use log::{error, info};
 use tracing_subscriber::EnvFilter;
@@ -107,7 +106,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let auth_keys = noise::Config::new(&KEYS).unwrap();
 
-    let transp = Transport::new(libp2p::tcp::Config::default().nodelay(true));
+//    let transp = Transport::new(libp2p::tcp::Config::default().nodelay(true));
 //        .upgrade(upgrade::Version::V1)
 //        .authenticate(noise::Config::xx(auth_keys).into_authenticated()) // XX Handshake pattern, IX exists as well and IK - only XX currently provides interop with other libp2p impls
 //        .multiplex(mplex::MplexConfig::new())
@@ -121,7 +120,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             libp2p::yamux::Config::default,
         )?
         .with_behaviour(|key: &identity::Keypair| {
-          let floodsub = Floodsub::new(PEER_ID.clone());
+            let mut floodsub = Floodsub::new(PEER_ID.clone());
+            floodsub.subscribe(TOPIC.clone());
 
             let mdns = libp2p::mdns::tokio::Behaviour::new(
               libp2p::mdns::Config::default(), 
@@ -167,11 +167,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
       if let Some(event) = evt {
         match event {
             EventType::Response(resp) => {
-                let json = serde_json::to_string(&resp).expect("can jsonify response");
+                let json = serde_json::to_string(&resp)
+                  .expect("can jsonify response")
+                  .as_bytes()
+                  .to_vec();
                 swarm
                     .behaviour_mut()
                     .floodsub
-                    .publish(TOPIC.clone(), json.as_bytes());
+                    .publish(TOPIC.clone(), json);
             }
             _ => {}
         }
