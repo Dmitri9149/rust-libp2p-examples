@@ -90,7 +90,6 @@ impl From<libp2p::mdns::Event> for RecipeBehaviourEvent {
 async fn read_local_recipes() -> Result<Recipes, Box<dyn Error>> {
     let content = fs::read(STORAGE_FILE_PATH).await?;
     let result = serde_json::from_slice(&content)?;
-//    println!("Read_result: {:?}", &result);
     Ok(result)
 }
 
@@ -313,7 +312,7 @@ async fn handle_list_peers(swarm: &mut Swarm<RecipeBehaviour>) {
 }
 
 async fn handle_list_recipes(cmd: &str, swarm: &mut Swarm<RecipeBehaviour>) {
-    let rest = cmd.strip_prefix("ls r");
+    let rest = cmd.strip_prefix("ls r ");
 
     let mut publish = |req: ListRequest| {
         let json = serde_json::to_string(&req).expect("can jsonify request");
@@ -351,6 +350,7 @@ async fn handle_list_recipes(cmd: &str, swarm: &mut Swarm<RecipeBehaviour>) {
         }
         None => match read_local_recipes().await {
             Ok(v) => {
+                println!("Have got None after 'ls r'");
                 info!("Local Recipes ({})", v.len());
                 v.iter().for_each(|r| info!("{:?}", r));
             }
@@ -363,13 +363,13 @@ async fn handle_create_recipes(cmd: &str) {
     if let Some(rest) = cmd.strip_prefix("create s") {
         let elements: Vec<&str> = rest.split('|').collect();
         if elements.len() < 3 {
-            info!("too few arguments: Format name|header|body");
+            info!("too few arguments: Format name|ingredients|instructions");
         } else {
             let name = elements.get(0).expect("name is there");
-            let header = elements.get(1).expect("header is there");
-            let body = elements.get(2).expect("body is there");
-            if let Err(e) = create_new_recipe(name, header, body).await {
-                error!("error creating story: {}", e);
+            let ingredients = elements.get(1).expect("ingredients is there");
+            let instructions = elements.get(2).expect("instructions is there");
+            if let Err(e) = create_new_recipe(name, ingredients, instructions).await {
+                error!("error creating recipe: {}", e);
             };
         }
     }
@@ -380,9 +380,9 @@ async fn handle_publish_recipe(cmd: &str) {
         match rest.trim().parse::<usize>() {
             Ok(id) => {
                 if let Err(e) = publish_recipe(id).await {
-                    info!("error publishing story with id {}, {}", id, e)
+                    info!("error publishing recipe with id {}, {}", id, e)
                 } else {
-                    info!("Published story with id: {}", id);
+                    info!("Published recipe with id: {}", id);
                 }
             }
             Err(e) => error!("invalid id: {}, {}", rest.trim(), e),
