@@ -163,11 +163,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let (response_sender, mut response_rcv) = mpsc::unbounded_channel();
 
     let auth_keys = noise::Config::new(&KEYS).unwrap();
-    //    let transp = Transport::new(libp2p::tcp::Config::default().nodelay(true));
-    //        .upgrade(upgrade::Version::V1)
-    //        .authenticate(noise::Config::xx(auth_keys).into_authenticated()) // XX Handshake pattern, IX exists as well and IK - only XX currently provides interop with other libp2p impls
-    //        .multiplex(mplex::MplexConfig::new())
-    //        .boxed();
 
     let mut swarm = libp2p::SwarmBuilder::with_new_identity()
         .with_tokio()
