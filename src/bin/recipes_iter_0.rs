@@ -2,10 +2,10 @@ use libp2p::futures::StreamExt;
 use libp2p::{
     floodsub::{Floodsub, FloodsubEvent, Topic},
     identity,
-    mdns::tokio::Behaviour,
+//    mdns::tokio::Behaviour,
     noise,
     swarm::{NetworkBehaviour, Swarm, SwarmEvent},
-    tcp::tokio::Transport,
+//    tcp::tokio::Transport,
     PeerId,
 };
 use tokio::{fs, io::AsyncBufReadExt, sync::mpsc};
@@ -318,7 +318,6 @@ async fn handle_list_recipes(cmd: &str, swarm: &mut Swarm<RecipeBehaviour>) {
         }
         None => match read_local_recipes().await {
             Ok(v) => {
-                println!("Have got None after 'ls r'");
                 info!("Local Recipes ({})", v.len());
                 v.iter().for_each(|r| info!("{:?}", r));
             }
