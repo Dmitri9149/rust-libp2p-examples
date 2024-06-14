@@ -13,7 +13,6 @@ use tokio::{fs, io::AsyncBufReadExt, sync::mpsc};
 use log::{error, info};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use tracing_subscriber::EnvFilter;
 
 use std::collections::HashSet;
 use std::error::Error;
@@ -156,9 +155,6 @@ async fn publish_recipe(id: usize) -> Result<(), Box<dyn Error>> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-//    let _ = tracing_subscriber::fmt()
-//        .with_env_filter(EnvFilter::from_default_env())
-//        .try_init();
     pretty_env_logger::init();
 
     info!("Peer Id: {}", PEER_ID.clone());
