@@ -18,7 +18,7 @@ use tracing_subscriber::EnvFilter;
 use std::collections::HashSet;
 use std::error::Error;
 
-const STORAGE_FILE_PATH: &str = "./recipes.json";
+const STORAGE_FILE_PATH: &str ="./recipes.json";
 
 // type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync + 'static>>;
 type Recipes = Vec<Recipe>;
@@ -90,6 +90,7 @@ impl From<libp2p::mdns::Event> for RecipeBehaviourEvent {
 async fn read_local_recipes() -> Result<Recipes, Box<dyn Error>> {
     let content = fs::read(STORAGE_FILE_PATH).await?;
     let result = serde_json::from_slice(&content)?;
+//    println!("Read_result: {:?}", &result);
     Ok(result)
 }
 
@@ -112,7 +113,7 @@ async fn create_new_recipe(
     });
     write_local_recipes(&local_recipes).await?;
 
-    info!("Created story:");
+    info!("Created recipe:");
     info!("Name: {}", name);
     info!("Ingredients: {}", ingredients);
     info!("Instructions:: {}", instructions);
@@ -156,10 +157,10 @@ async fn publish_recipe(id: usize) -> Result<(), Box<dyn Error>> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env())
-        .try_init();
-    //    pretty_env_logger::init();
+//    let _ = tracing_subscriber::fmt()
+//        .with_env_filter(EnvFilter::from_default_env())
+//        .try_init();
+    pretty_env_logger::init();
 
     info!("Peer Id: {}", PEER_ID.clone());
     println!("Peer Id: {}", PEER_ID.clone());
@@ -215,7 +216,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         SwarmEvent::Behaviour(RecipeBehaviourEvent::Floodsub(event)) => Some(EventType::FloodsubEvent(event)),
                         SwarmEvent::Behaviour(RecipeBehaviourEvent::Mdns(event)) => Some(EventType::MdnsEvent(event)),
                         _ => {
-                            info!("Unhandled Swarm Event: {:?}", event);
+//                            info!("Unhandled Swarm Event: {:?}", event);
                             None
                         }
                     }
@@ -234,7 +235,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
                 EventType::Input(line) => match line.as_str() {
                     "ls p" => handle_list_peers(&mut swarm).await,
-                    cmd if cmd.starts_with("ls_r") => handle_list_recipes(cmd, &mut swarm).await,
+                    cmd if cmd.starts_with("ls r") => handle_list_recipes(cmd, &mut swarm).await,
                     cmd if cmd.starts_with("create r") => handle_create_recipes(cmd).await,
                     cmd if cmd.starts_with("publish r") => handle_publish_recipe(cmd).await,
                     _ => error!("unknown command"),
@@ -294,7 +295,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             }
                         }
                     }
-                    _ => info!("Subscription events"), 
+                    _ => {} // info!("Subscription events"), 
                 },
             }
         }
