@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 
 use std::collections::HashSet;
 use std::error::Error;
+use std::time::Duration;
 
 const STORAGE_FILE_PATH: &str ="./recipes.json";
 
@@ -173,15 +174,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
         )?
         .with_behaviour(|key: &identity::Keypair| {
             let mut floodsub = Floodsub::new(PEER_ID.clone());
-            floodsub.subscribe(TOPIC.clone());
+            floodsub.subscribe(Topic::new("recipes")); //TOPIC.clone());
 
             let mdns = libp2p::mdns::tokio::Behaviour::new(
                 libp2p::mdns::Config::default(),
-                key.public().to_peer_id(),
+                PEER_ID.clone()
+//                key.public().to_peer_id(),
             )?;
 
             Ok(RecipeBehaviour { floodsub, mdns })
         })?
+        .with_swarm_config(|c| c.with_idle_connection_timeout(Duration::from_secs(60)))
         .build();
 
     let mut stdin = tokio::io::BufReader::new(tokio::io::stdin()).lines();
@@ -327,7 +330,7 @@ async fn handle_list_recipes(cmd: &str, swarm: &mut Swarm<RecipeBehaviour>) {
 }
 
 async fn handle_create_recipes(cmd: &str) {
-    if let Some(rest) = cmd.strip_prefix("create s") {
+    if let Some(rest) = cmd.strip_prefix("create r") {
         let elements: Vec<&str> = rest.split('|').collect();
         if elements.len() < 3 {
             info!("too few arguments: Format name|ingredients|instructions");
