@@ -185,15 +185,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .build();
 
     let mut stdin = tokio::io::BufReader::new(tokio::io::stdin()).lines();
-    /*
-            Swarm::listen_on(
-              &mut swarm,
-              "/ip4/0.0.0.0/tcp/0"
-                  .parse()
-                  .expect("can get a local socket"),
-          )
-          .expect("swarm can be started");
-    */
     swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
 
     loop {
