@@ -309,26 +309,12 @@ async fn handle_list_recipes(cmd: &str, swarm: &mut Swarm<RecipeBehaviour>) {
                 mode: ListMode::ALL,
             };
             publish(req);
-/* 
-            let json = serde_json::to_string(&req).expect("can jsonify request");
-            swarm
-                .behaviour_mut()
-                .floodsub
-                .publish(TOPIC.clone(), json.as_bytes().to_vec());
-*/
         }
         Some(recipe_peer_id) => {
             let req = ListRequest {
                 mode: ListMode::One(recipe_peer_id.to_owned()),
             };
             publish(req);
-/* 
-            let json = serde_json::to_string(&req).expect("can jsonify request");
-            swarm
-                .behaviour_mut()
-                .floodsub
-                .publish(TOPIC.clone(), json.as_bytes().to_vec());
-*/
         }
         None => match read_local_recipes().await {
             Ok(v) => {
