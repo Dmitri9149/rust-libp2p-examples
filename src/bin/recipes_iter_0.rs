@@ -1,3 +1,6 @@
+// the starting point for the code is 
+// https://github.com/zupzup/rust-peer-to-peer-example
+
 use libp2p::{
     floodsub::{Floodsub, FloodsubEvent, Topic},
     futures::StreamExt,
