@@ -1,32 +1,28 @@
-use libp2p::futures::StreamExt;
 use libp2p::{
     floodsub::{Floodsub, FloodsubEvent, Topic},
+    futures::StreamExt,
     identity,
-//    mdns::tokio::Behaviour,
+    //    mdns::tokio::Behaviour,
     noise,
     swarm::{NetworkBehaviour, Swarm, SwarmEvent},
-//    tcp::tokio::Transport,
+    //    tcp::tokio::Transport,
     PeerId,
 };
-use tokio::{fs, io::AsyncBufReadExt, sync::mpsc};
-
 use log::{error, info};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-
 use std::collections::HashSet;
 use std::error::Error;
 use std::time::Duration;
+use tokio::{fs, io::AsyncBufReadExt, sync::mpsc};
 
-const STORAGE_FILE_PATH: &str ="./recipes.json";
+const STORAGE_FILE_PATH: &str = "./recipes.json";
 
 // type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync + 'static>>;
 type Recipes = Vec<Recipe>;
 
 static KEYS: Lazy<identity::Keypair> = Lazy::new(|| identity::Keypair::generate_ed25519());
-
 static PEER_ID: Lazy<PeerId> = Lazy::new(|| PeerId::from(KEYS.public()));
-
 static TOPIC: Lazy<Topic> = Lazy::new(|| Topic::new("recipes"));
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -133,7 +129,7 @@ fn respond_with_public_recipes(sender: mpsc::UnboundedSender<ListResponse>, rece
                     error!("error sending response via channel, {}", e);
                 }
             }
-            Err(e) => error!("error fetching local stories to answer ALL request, {}", e),
+            Err(e) => error!("error fetching local recipes to answer ALL request, {}", e),
         }
     });
 }
@@ -163,9 +159,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let (response_sender, mut response_rcv) = mpsc::unbounded_channel();
 
-    let auth_keys = noise::Config::new(&KEYS).unwrap();
-
-    let mut swarm = libp2p::SwarmBuilder::with_new_identity()
+    let mut swarm = libp2p::SwarmBuilder::with_existing_identity(KEYS.clone())
         .with_tokio()
         .with_tcp(
             libp2p::tcp::Config::default().nodelay(true),
@@ -173,13 +167,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
             libp2p::yamux::Config::default,
         )?
         .with_behaviour(|key: &identity::Keypair| {
-            let mut floodsub = Floodsub::new(PEER_ID.clone());
-            floodsub.subscribe(Topic::new("recipes")); //TOPIC.clone());
+            let mut floodsub = Floodsub::new(key.public().to_peer_id());
+            floodsub.subscribe(TOPIC.clone());
 
             let mdns = libp2p::mdns::tokio::Behaviour::new(
                 libp2p::mdns::Config::default(),
-                PEER_ID.clone()
-//                key.public().to_peer_id(),
+                key.public().to_peer_id(),
             )?;
 
             Ok(RecipeBehaviour { floodsub, mdns })
@@ -188,6 +181,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .build();
 
     let mut stdin = tokio::io::BufReader::new(tokio::io::stdin()).lines();
+
     swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
 
     loop {
@@ -200,7 +194,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         SwarmEvent::Behaviour(RecipeBehaviourEvent::Floodsub(event)) => Some(EventType::FloodsubEvent(event)),
                         SwarmEvent::Behaviour(RecipeBehaviourEvent::Mdns(event)) => Some(EventType::MdnsEvent(event)),
                         _ => {
-//                            info!("Unhandled Swarm Event: {:?}", event);
+                            info!("Unhandled Swarm Event: {:?}", event);
                             None
                         }
                     }
@@ -214,7 +208,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     let json = serde_json::to_string(&resp)
                         .expect("can jsonify response")
                         .as_bytes()
-                        .to_vec();
+                        .to_owned();
                     swarm.behaviour_mut().floodsub.publish(TOPIC.clone(), json);
                 }
                 EventType::Input(line) => match line.as_str() {
@@ -279,7 +273,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             }
                         }
                     }
-                    _ => {} // info!("Subscription events"), 
+                    _ => info!("Subscription events"),
                 },
             }
         }
@@ -304,7 +298,7 @@ async fn handle_list_recipes(cmd: &str, swarm: &mut Swarm<RecipeBehaviour>) {
         swarm
             .behaviour_mut()
             .floodsub
-            .publish(TOPIC.clone(), json.as_bytes().to_vec());
+            .publish(TOPIC.clone(), json.as_bytes().to_owned());
     };
     match rest {
         Some("all") => {
