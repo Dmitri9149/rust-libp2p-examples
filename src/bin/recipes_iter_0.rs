@@ -2,10 +2,9 @@ use libp2p::{
     floodsub::{Floodsub, FloodsubEvent, Topic},
     futures::StreamExt,
     identity,
-    //    mdns::tokio::Behaviour,
+    mdns::{tokio::Behaviour, Event},
     noise,
     swarm::{NetworkBehaviour, Swarm, SwarmEvent},
-    //    tcp::tokio::Transport,
     PeerId,
 };
 use log::{error, info};
@@ -55,20 +54,20 @@ enum EventType {
     Response(ListResponse),
     Input(String),
     FloodsubEvent(FloodsubEvent),
-    MdnsEvent(libp2p::mdns::Event),
+    MdnsEvent(Event),
 }
 
 #[derive(NetworkBehaviour)]
 #[behaviour(out_event = "RecipeBehaviourEvent")]
 struct RecipeBehaviour {
     floodsub: Floodsub,
-    mdns: libp2p::mdns::tokio::Behaviour,
+    mdns: Behaviour,
 }
 
 #[derive(Debug)]
 enum RecipeBehaviourEvent {
     Floodsub(FloodsubEvent),
-    Mdns(libp2p::mdns::Event),
+    Mdns(Event),
 }
 
 impl From<FloodsubEvent> for RecipeBehaviourEvent {
@@ -77,8 +76,8 @@ impl From<FloodsubEvent> for RecipeBehaviourEvent {
     }
 }
 
-impl From<libp2p::mdns::Event> for RecipeBehaviourEvent {
-    fn from(event: libp2p::mdns::Event) -> Self {
+impl From<Event> for RecipeBehaviourEvent {
+    fn from(event: Event) -> Self {
         RecipeBehaviourEvent::Mdns(event)
     }
 }
@@ -170,7 +169,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let mut floodsub = Floodsub::new(key.public().to_peer_id());
             floodsub.subscribe(TOPIC.clone());
 
-            let mdns = libp2p::mdns::tokio::Behaviour::new(
+            let mdns = Behaviour::new(
                 libp2p::mdns::Config::default(),
                 key.public().to_peer_id(),
             )?;
@@ -219,7 +218,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     _ => error!("unknown command"),
                 },
                 EventType::MdnsEvent(mdns_event) => match mdns_event {
-                    libp2p::mdns::Event::Discovered(discovered_list) => {
+                    Event::Discovered(discovered_list) => {
                         for (peer, _addr) in discovered_list {
                             info!("Disocvered a peer:{} at {}", peer, _addr);
                             swarm
@@ -228,7 +227,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 .add_node_to_partial_view(peer);
                         }
                     }
-                    libp2p::mdns::Event::Expired(expired_list) => {
+                    Event::Expired(expired_list) => {
                         for (peer, _addr) in expired_list {
                             info!("Expired a peer:{} at {}", peer, _addr);
                             if !swarm
