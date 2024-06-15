@@ -169,10 +169,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let mut floodsub = Floodsub::new(key.public().to_peer_id());
             floodsub.subscribe(TOPIC.clone());
 
-            let mdns = Behaviour::new(
-                libp2p::mdns::Config::default(),
-                key.public().to_peer_id(),
-            )?;
+            let mdns = Behaviour::new(libp2p::mdns::Config::default(), key.public().to_peer_id())?;
 
             Ok(RecipeBehaviour { floodsub, mdns })
         })?
