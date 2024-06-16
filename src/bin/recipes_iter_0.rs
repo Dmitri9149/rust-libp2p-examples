@@ -1,4 +1,4 @@
-// the starting point for the code is 
+// the starting point for the code is
 // https://github.com/zupzup/rust-peer-to-peer-example
 
 use libp2p::{
